@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Emoji Word Guesser 🎮</title>
+  <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />
+  <script defer src="https://pyscript.net/latest/pyscript.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 2em;
+    }
+    .letter-btn {
+      margin: 4px;
+      font-size: 20px;
+      width: 40px;
+      height: 40px;
+    }
+    #emoji {
+      font-size: 40px;
+      margin: 10px;
+    }
+    #word {
+      font-size: 28px;
+      margin: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Emoji Word Guesser 🧠</h1>
+  <div id="emoji">🤔</div>
+  <div id="word">_ _ _ _ _</div>
+  <div id="buttons"></div>
+  <py-script>
+import random
+from pyodide.ffi import create_proxy
+from js import document
+
+words = ["python", "emoji", "hangman", "keyboard", "bamboo"]
+emojis = {
+    "start": "🤔",
+    "correct": "😊",
+    "wrong": ["😕", "😟", "😣", "😭", "💀"],
+    "win": "🎉 You won!",
+    "lose": "☠️ Game Over"
+}
+
+# Game state
+word = random.choice(words)
+guessed = set()
+wrong_guesses = 0
+max_wrong = len(emojis["wrong"])
+
+def update_display():
+    word_display = " ".join([c if c in guessed else "_" for c in word])
+    document.getElementById("word").innerText = word_display
+
+def guess_letter(evt):
+    global wrong_guesses
+    letter = evt.target.innerText.lower()
+    guessed.add(letter)
+    evt.target.disabled = True
+
+    if letter in word:
+        document.getElementById("emoji").innerText = emojis["correct"]
+        update_display()
+        if all(c in guessed for c in word):
+            document.getElementById("emoji").innerText = emojis["win"]
+            disable_all_buttons()
+    else:
+        if wrong_guesses < max_wrong:
+            document.getElementById("emoji").innerText = emojis["wrong"][wrong_guesses]
+            wrong_guesses += 1
+        if wrong_guesses == max_wrong:
+            document.getElementById("emoji").innerText = emojis["lose"] + f" Word: {word}"
+            update_display()
+            disable_all_buttons()
+
+def disable_all_buttons():
+    for btn in document.querySelectorAll(".letter-btn"):
+        btn.disabled = True
+
+# Initialize buttons
+btn_div = document.getElementById("buttons")
+for letter in "abcdefghijklmnopqrstuvwxyz":
+    btn = document.createElement("button")
+    btn.innerText = letter.upper()
+    btn.className = "letter-btn"
+    btn.onclick = create_proxy(guess_letter)
+    btn_div.appendChild(btn)
+
+update_display()
+  </py-script>
+</body>
+</html>
